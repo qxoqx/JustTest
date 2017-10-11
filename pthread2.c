@@ -16,6 +16,7 @@ static sigjmp_buf env2;
 
 static void* thread_a(void *);
 static void* thread_b(void *);
+static void* thread_c(void *);
 static void signal_handler(int , siginfo_t *, void *);
 
 int main(int argc, char *argv[])
@@ -27,8 +28,8 @@ int main(int argc, char *argv[])
     act.sa_flags = SA_SIGINFO;
     sigaction(SIGSEGV,  &act, NULL);
 
-    printf("child thread lwpid = %u\n", syscall(SYS_gettid));  
-    printf("child thread tid = %u\n", pthread_self());  
+    printf("%s child thread lwpid = %u\n", __func__, syscall(SYS_gettid));  
+    printf("%s child thread tid = %u\n", __func__, pthread_self());  
     
     pthread_create( &tid1, 0, &thread_a, NULL );
     pthread_create( &tid2, 0, &thread_b, NULL );
@@ -45,8 +46,8 @@ static void* thread_a(void *args)
     char *cp = NULL;
     ret1 = setjmp(env1);
 
-    printf("child thread lwpid = %u\n", syscall(SYS_gettid));  
-    printf("child thread tid = %u\n", pthread_self());  
+    printf("%s child thread lwpid = %u\n", __func__, syscall(SYS_gettid));  
+    printf("%s child thread tid = %u\n", __func__, pthread_self());   
 
     if(ret1 == 5){
         ret2 = sigsetjmp(env2, 0);
@@ -54,7 +55,7 @@ static void* thread_a(void *args)
             printf("thread A exit\n");
             pthread_exit(0);
         }
-        printf("jump to thread A successful\n");
+        printf("B jump to A successful\n");
         *cp = '\0';
         pthread_exit(0);
     }
@@ -64,8 +65,8 @@ static void* thread_a(void *args)
 static void* thread_b(void *args)
 {
     sleep(5);   
-    printf("child thread lwpid = %u\n", syscall(SYS_gettid));  
-    printf("child thread tid = %u\n", pthread_self());  
+    printf("%s child thread lwpid = %u\n", __func__, syscall(SYS_gettid));  
+    printf("%s child thread tid = %u\n", __func__, pthread_self());  
     
     longjmp(env1, 5);
     printf("thread B exit\n");
@@ -89,14 +90,17 @@ static void signal_handler(int signal, siginfo_t *info, void *c)
     sigsegv_caught++;
     int i = 0;
 
-    printf("child thread lwpid = %u\n", syscall(SYS_gettid));  
-    printf("child thread tid = %u\n", pthread_self());  
+    printf("%s child thread lwpid = %u\n", __func__, syscall(SYS_gettid));  
+    printf("%s child thread tid = %u\n", __func__, pthread_self());  
 
-    printf("signal is %d, SIGSEGV is %d\n", signal, SIGSEGV);  
     if(signal == SIGSEGV){
-        
-        siglongjmp(env2, 1);
-        printf("thread SIG exit\n");
-        return ;
+        if(tid2 == pthread_self()){
+            //restart thread
+            siglongjmp(env2, 1);
+        }else{
+            //exit()
+            exit(-1);
+        }
+        printf("signal is %d, SIGSEGV is %d\n", signal, SIGSEGV);  
     }
 }
