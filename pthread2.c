@@ -76,10 +76,6 @@ static void* thread_b(void *args)
  
     sleep(5);  
     longjmp(env1, 5);
-    // while(1){
-    //     sleep(3);
-    //     printf("This is thread B\n");
-    // }
     printf("thread B exit\n");
     pthread_exit(0);
 }
@@ -112,8 +108,8 @@ static void signal_handler(int signal, siginfo_t *info, void *c)
             printf("right tid\n");
             siglongjmp(env2, 1);
         }else{
-            printf("eixt\n");
             //exit(-1)
+            printf("eixt\n");
             exit(-1);
         }
         //siglongjmp(env2, 1);
