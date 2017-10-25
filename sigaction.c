@@ -46,9 +46,11 @@ static void* thread_b(void *args)
     // printf("child thread lwpid = %u\n", syscall(SYS_gettid));  
     printf("child thread b thread id = 0x%x, pid = %u, tid = %u\n", pthread_self(), getpid(), syscall(SYS_gettid));  
     sleep(1);
-    pthread_kill(tid1, SIGSEGV);
+    //raise(SIGSEGV);
+    //pthread_kill(tid1, SIGSEGV);
+    sigqueue(tid1, SIGSEGV, (const union sigval)NULL);
     sleep(3);
-    //*cp = '\0';
+    *cp = '\0';
     pthread_exit(0);
     
 }
@@ -67,6 +69,7 @@ int main(void)
     
     pthread_create( &tid1, 0, &thread_a, NULL );
     pthread_create( &tid2, 0, &thread_b, NULL );
+    printf("child thread m tid1 = 0x%x, tid2 = 0x%x\n", tid1, tid2);
     pthread_join(tid1, 0);
     pthread_join(tid2, 0);
 
