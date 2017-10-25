@@ -43,7 +43,7 @@ static void* thread_b(void *args)
     // sigaddset(&mask, SIGSEGV); 
     // pthread_sigmask(SIG_SETMASK, &mask, NULL);
     
-  //  printf("child thread lwpid = %u\n", syscall(SYS_gettid));  
+    // printf("child thread lwpid = %u\n", syscall(SYS_gettid));  
     printf("child thread b thread id = 0x%x, pid = %u, tid = %u\n", pthread_self(), getpid(), syscall(SYS_gettid));  
     sleep(1);
     pthread_kill(tid1, SIGSEGV);
