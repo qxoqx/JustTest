@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <setjmp.h>
 #include <execinfo.h>
+#include <unistd.h>
 
 static int sigsegv_caught;
 static pthread_t tid1;
@@ -67,13 +68,15 @@ int main(int argc, char *argv[])
         printf("mutex init error\n");
     }
     //pthread is called as qemu_thread in QEMU
-    //pthread_create( &tid2, 0, &worker_thread2, (void *)NULL );
+    pthread_create( &tid2, 0, &worker_thread2, (void *)NULL );
 
     //sleep(5);
     pthread_create( &tid1, 0, &worker_thread, (void *)NULL );
     pthread_join( tid1, 0 );
-    //pthread_create( &tid1, 0, &worker_thread, (void *)NULL );
-    //pthread_join( tid1, 0 );
+    pthread_create(&tid1, 0, &worker_thread, (void *)NULL);
+    pthread_join(tid2, 0);
+    
+    
 
     //while(1)
     //{
@@ -84,22 +87,29 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+//ft thread
 static void* worker_thread(void* args)
 {
     int ret;
-
+    static a = 1;
     printf("%s child thread tid = %u\n", __func__, pthread_self());
-
-    printf("worker_thread lock\n");
+    // sleep(1);
+    // if(a == 1){
+    //     a = 0;
+    //     char *cp = NULL; /* get SEGV */
+    //     *cp = '\0';
+    // }
+    
     pthread_mutex_lock(&mutex);
-    //lock = 1;
-
-    printf("signal happen\n");
+    printf("worker_thread lock\n");
+    lock = 1;
+    sleep(2);
+    //printf("signal happen\n");
     char *cp = NULL;    /* get SEGV */
     *cp = '\0';
 
-    printf("worker_thread unlock\n");
     pthread_mutex_unlock(&mutex);
+    printf("worker_thread unlock\n");
     lock = 0;
 
     return NULL;
@@ -111,9 +121,15 @@ static void* worker_thread2(void* args)
     printf("%s child thread tid = %u\n", __func__, pthread_self());
     while(1)
     {
-        printf("worker_thread2 lock\n");
+        sleep(1);
+        
         pthread_mutex_lock(&mutex);
-        sleep(20);
+        printf("worker_thread2 lock\n");
+        sleep(5);
+
+        // char *cp = NULL; /* get SEGV */
+        // *cp = '\0';
+        //sleep(20);
         pthread_mutex_unlock(&mutex);
         printf("worker_thread2 unlock\n");
         sleep(3);
